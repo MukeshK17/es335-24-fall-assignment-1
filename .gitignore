@@ -1,4 +1,3 @@
 *.pyc
 .DS_Store
-HAR/UCI*
 .ipynb_checkpoints

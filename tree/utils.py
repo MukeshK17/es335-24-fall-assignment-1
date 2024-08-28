@@ -2,46 +2,121 @@
 You can add your own functions here according to your decision tree implementation.
 There is no restriction on following the below template, these fucntions are here to simply help you.
 """
-
+import numpy as np
 import pandas as pd
 
 def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
     """
-    Function to perform one hot encoding on the input data
+    Function to perform one hot encoding on the input data.
     """
 
-    pass
+    X = pd.get_dummies(X , columns = X.columns)
+    return X
 
 def check_ifreal(y: pd.Series) -> bool:
     """
     Function to check if the given series has real or discrete values
     """
 
-    pass
+    if len(y.unique()) <= len(y)**0.5:
+        return False
+    else:
+        return True
 
 
 def entropy(Y: pd.Series) -> float:
     """
     Function to calculate the entropy
+    Note: Only applicable for discrete input data.
     """
 
-    pass
+    count_values = Y.value_counts()
+    probab_value = count_values / len(Y)
+    entropy = -np.sum(probab_value * np.log2(probab_value))
+    return entropy
 
 
 def gini_index(Y: pd.Series) -> float:
     """
-    Function to calculate the gini index
+    Function to calculate the gini index.
+    Note: Only applicable for discrete input data.
     """
 
-    pass
+    count_values = Y.value_counts()
+    probab_value = count_values / len(Y)
+    gini = -np.sum(probab_value**2)
+    return gini + 1
+
+
+
+def MSE(Y: pd.Series) -> float:
+    """
+    Function to calculate mean square error aka variance.
+    Note: Only applicable for real input data
+    """
+
+    Y_mean = sum(Y)/len(Y)
+    for i in range (len(Y)):
+        Y[i]  = (Y[i] - Y_mean)**2 
+    mean_sqrd_err = sum(Y)/len(Y)
+    return mean_sqrd_err
+
+def best_split_point(Y: pd.Series, attr: pd.Series) -> list:
+    # Criterion has to be MSE
+
+    if len(attr) == 1:
+        return [attr[0],0]
+    
+    attr = sorted(attr)
+    best_split_value = (attr[0]+attr[1])/2
+    Y_left = [y for y, a in zip(Y, attr) if a <= best_split_value]
+    Y_right = [y for y, a in zip(Y, attr) if a > best_split_value]
+    min_mse = (len(Y_left)*MSE(Y_left) + len(Y_right)*MSE(Y_right))/len(Y)
+    for i in range (1,len(attr)-1):
+        split_value = (attr[i]+attr[i+1])/2
+        Y_left = [y for y, a in zip(Y, attr) if a <= best_split_value]
+        Y_right = [y for y, a in zip(Y, attr) if a > best_split_value]
+        mse = (len(Y_left)*MSE(Y_left) + len(Y_right)*MSE(Y_right))/len(Y)
+        if mse < min_mse:
+            min_mse = mse
+            best_split_value = split_value
+
+    return [best_split_value,min_mse]
 
 
 def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
     """
-    Function to calculate the information gain using criterion (entropy, gini index or MSE)
+    Function to calculate the information gain using criterion (entropy, gini_index or MSE)
     """
 
-    pass
+    if criterion == "entropy":
+        impurity_before = entropy(Y)
+    elif criterion == "gini_index":
+        impurity_before = gini_index(Y)
+    else:
+        impurity_before = MSE(Y)
+
+    impurity_after = 0
+
+    if check_ifreal(attr):
+
+        impurity_after = best_split_point(Y,attr)[1]
+
+    else:
+
+        for label in attr.unique():
+            values_given_label = Y[attr == label]
+            if criterion == 'entropy':
+                sub_impurity_after = entropy(values_given_label)
+            elif criterion == 'gini_index':
+                sub_impurity_after = gini_index(values_given_label)
+            else:
+                sub_impurity_after = MSE(values_given_label)
+        
+            impurity_after += (len(values_given_label)/Y.size) * sub_impurity_after
+    
+    information_gain = impurity_before - impurity_after
+    return information_gain
 
 
 def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.Series):
@@ -57,7 +132,21 @@ def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.S
 
     # According to wheather the features are real or discrete valued and the criterion, find the attribute from the features series with the maximum information gain (entropy or varinace based on the type of output) or minimum gini index (discrete output).
 
-    pass
+    # if check_ifreal(features):
+    #     return best_split_point(y, features)[0]
+
+    max_info_gain = 0
+    opt_attrbt = None
+
+    for _ in features:
+        info_gain = information_gain(y, X[_], criterion)
+        print("Feature",_,"info gain",info_gain)
+        if info_gain >= max_info_gain:
+            max_info_gain = info_gain
+            opt_attrbt = _
+        
+    
+    return opt_attrbt
 
 
 def split_data(X: pd.DataFrame, y: pd.Series, attribute, value):
@@ -74,4 +163,14 @@ def split_data(X: pd.DataFrame, y: pd.Series, attribute, value):
 
     # Split the data based on a particular value of a particular attribute. You may use masking as a tool to split the data.
 
-    pass
+    if check_ifreal(attribute):
+        left = (X[attribute] <= value)
+        right = (X[attribute] >= value)
+    else:
+        left = (X[attribute] == value)
+        right = (X[attribute] != value)
+
+    X_left, X_right = X[left], X[right]
+    y_left, y_right = y[left], y[right]
+
+    return X_left, X_right, y_left, y_right

@@ -1,3 +1,14 @@
+This repository was a part of series of assignments for Course ES335 Machine Learning (2024-25) at Indian Institute of Technology Gandhinagar.
+
+Contributers:
+- [Mukesh](https://github.com/MukeshK17)
+- [Rahul](https://github.com/SRahul02)
+- [Srajan](https://github.com/srajan0149)
+- [Tanuj](https://github.com/TanujSharma2712)
+
+Thanks to our instructor [Nipun Batra](https://github.com/nipunbatra) for giving these amazing assignments.
+
+----
 # Assignment 1
 
 ## Total 20 marks (Will be scaled down to 10 marks)
